@@ -5,6 +5,7 @@ import time
 def main():
 
     start = time.time()
+
     gbm()
     call_price = heston_call_price(S0, K, r, T, kappa, theta, sigma, rho, v0)
     put_price = heston_put_price(S0, K, r, T, kappa, theta, sigma, rho, v0)
