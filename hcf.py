@@ -13,7 +13,7 @@ rho = -0.5    # Correlation coefficient
 v0 = 0.05     # Initial volatility
 
 # Define characteristic functions
-def heston_characteristic_function(u, S0, K, r, T, kappa, theta, sigma, rho, v0):
+def heston_characteristic_function(u, S0, r, T, kappa, theta, sigma, rho, v0):
    xi = kappa - rho * sigma * 1j * u
    d = np.sqrt((rho * sigma * 1j * u - xi)**2 - sigma**2 * (-u * 1j - u**2))
    g = (xi - rho * sigma * 1j * u - d) / (xi - rho * sigma * 1j * u + d)
@@ -22,13 +22,24 @@ def heston_characteristic_function(u, S0, K, r, T, kappa, theta, sigma, rho, v0)
    return np.exp(C + D * v0 + 1j * u * np.log(S0))
 
 # Define functions to compute call and put options prices
-def heston_call_price(S0, K, r, T, kappa, theta, sigma, rho, v0):
-   integrand = lambda u: np.real(np.exp(-1j * u * np.log(K)) / (1j * u) * heston_characteristic_function(u - 1j, S0, K, r, T, kappa, theta, sigma, rho, v0))
-   integral, _ = quad(integrand, 0, np.inf)
-   return np.exp(-r * T) * 0.5 * S0 - np.exp(-r * T) / np.pi * integral
+def P1_integrand(u):
+    phi = heston_characteristic_function(u - 1j, S0, r, T, kappa, theta, sigma, rho, v0)
+    return np.real(np.exp(-1j * u * np.log(K)) * phi / (1j * u))
 
+def P2_integrand(u):
+    phi = heston_characteristic_function(u, S0, r, T, kappa, theta, sigma, rho, v0)
+    return np.real(np.exp(-1j * u * np.log(K)) * phi / (1j * u))
 
-def heston_put_price(S0, K, r, T, kappa, theta, sigma, rho, v0):
-   integrand = lambda u: np.real(np.exp(-1j * u * np.log(K)) / (1j * u) * heston_characteristic_function(u - 1j, S0, K, r, T, kappa, theta, sigma, rho, v0))
-   integral, _ = quad(integrand, 0, np.inf)
-   return np.exp(-r * T) / np.pi * integral - S0 + K * np.exp(-r * T)
+# Final pricing function
+def heston_call_price():
+    integral_P1, _ = quad(P1_integrand, 0, np.inf, limit=1000)
+    integral_P2, _ = quad(P2_integrand, 0, np.inf, limit=1000)
+
+    P1 = 0.5 + integral_P1 / np.pi
+    P2 = 0.5 + integral_P2 / np.pi
+
+    return S0 * P1 - K * np.exp(-r * T) * P2
+
+def heston_put_price():
+    call = heston_call_price()
+    return call - S0 + K * np.exp(-r * T)

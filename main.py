@@ -6,9 +6,8 @@ def main():
 
     start = time.time()
 
-    gbm()
-    call_price = heston_call_price(S0, K, r, T, kappa, theta, sigma, rho, v0)
-    put_price = heston_put_price(S0, K, r, T, kappa, theta, sigma, rho, v0)
+    call_price = heston_call_price()
+    put_price = heston_put_price()
 
     print("European Call Option Price:", np.round(call_price, 2))
     print("European Put Option Price:", np.round(put_price, 2))
